@@ -1,0 +1,5 @@
+- sudo apt updata
+- sudo apt install llvm clang clang-11
+- sudo apt install linux-headers-"$(uname -r)"
+- snap install rustup --classic
+- rustup toolchain install nightly
