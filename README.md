@@ -30,7 +30,7 @@ Los pasos para compilar el kernel son los siguientes:
 
 Generará el archivo helloWolrd.ko, que es nuestro módulo a emplear.
 
-Si queremos, podemos limpiar el directorio, para ello ejecutamo 
+Si queremos, podemos limpiar el directorio, para ello ejecutamos
 
 `make clean`
 
