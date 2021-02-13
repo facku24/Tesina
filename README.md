@@ -26,23 +26,23 @@ La idea detrás de Driver1.0 es comenzar con claro ejemplo de módulo de kernel.
 
 Los pasos para compilar el kernel son los siguientes:
 
-- make
+> make
 
 Generará el archivo helloWolrd.ko, que es nuestro módulo a emplear.
 
 Si queremos, podemos limpiar el directorio, para ello ejecutamo 
 
-- make clean
+> make clean
 
 ### Modo de Uso
 
 Una vez compilado y generado nuestro módulo (*helloWorld.ko*), ejecutamos los siguientes:
 
-1. sudo insmod helloWorld.ko
+> sudo insmod helloWorld.ko
 
 Debemos tener privilegios de administrador para poder insertar el módulo en el kernel.
 
-2. dmesg
+> dmesg
 
 Con el comando `dmesg` imprimos en consola los logs del sistema. Deberíamos ver algo como lo siguiente
 
@@ -52,11 +52,11 @@ Con el comando `dmesg` imprimos en consola los logs del sistema. Deberíamos ver
 [16190.064962] Hello World!
 ```
 
-3. sudo rmmmod helloWorld.ko
+> sudo rmmmod helloWorld.ko
 
 Con este comando, removemos el módulo del kernel.
 
-4. dmesg
+> dmesg
 
 Nuevamente imprimimos los logs del sistema y deberíamos obtener algo como lo siguiente:
 
