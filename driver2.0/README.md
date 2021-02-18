@@ -1,85 +1,50 @@
 # Linux kernel modules in safe Rust
 
-This is a framework for writing loadable Linux kernel modules in Rust,
-using safe abstractions around kernel interfaces and primitives.
+Este ejemplo es un driver simple en Rust. Al igual que `Driver1.0` simplemente imprime `Hello kernel module!` en stdout cuando es insertado en el kernel y `Goodbye kernel module!` cuando es removido.
 
-For more information on the motivation and goals for this project, check
-out [our presentation at Linux Security Summit North America
-2019](https://ldpreload.com/p/kernel-modules-in-rust-lssna2019.pdf)
-and the [video on YouTube](https://www.youtube.com/watch?v=RyY01fRyGhM).
-We're immediately focusing on making this project viable for out-of-tree
-modules, but we also see this project as a testing ground for whether
-in-tree components could be written in Rust.
+## Diseño
 
-There is a simple demo module in the hello-world directory, as well as
-various other examples in the tests/ directory.
+Ejecutamos [bindgen] (https://github.com/rust-lang/rust-bindgen) en los headers del kernel para generar links automáticos de Rust FFI. Bindgen funciona con [Clang] (https://clang.llvm.org), por lo que usamos el propio sistema de compilación del kernel para determinar los CFLAGS adecuados. Luego escribimos links seguros para estos tipos (vease los archivos dentro de `src /`).
 
-## Design
+Cada módulo del kernel en Rust vive en una caja `staticlib`, que genera un archivo` .a`. Pasamos este objeto al sistema de compilación de módulos del propio kernel de Linux para vincularlo a un `.ko`.
 
-We run [bindgen](https://github.com/rust-lang/rust-bindgen) on the
-kernel headers to generate automatic Rust FFI bindings. bindgen is
-powered by [Clang](https://clang.llvm.org), so we use the kernel's
-own build system to determine the appropriate CFLAGS. Then we write safe
-bindings to these types (see the various files inside `src/`).
+El kernel es intrínsecamente multiproceso: se puede acceder a los recursos del kernel desde múltiples procesos del espacio de usuario a la vez, lo que provoca que múltiples subprocesos de ejecución dentro del kernel manejen las llamadas al sistema (o interrupciones). Por lo tanto, el tipo `KernelModule` es [` Sync` (https://doc.rust-lang.org/book/ch16-04-extensible-concurrency-sync-and-send.html), por lo que todos los datos compartidos por un El módulo del kernel debe ser seguro para acceder simultáneamente (por ejemplo, mediante la implementación del bloqueo).
 
-Each kernel module in Rust lives in a `staticlib` crate, which generates
-a `.a` file. We pass this object to the Linux kernel's own module build
-system for linking into a `.ko`.
+## Requerimientos de sistema
 
-The kernel is inherently multi-threaded: kernel resources can be
-accessed from multiple userspace processes at once, which causes
-multiple threads of execution inside the kernel to handle system calls
-(or interrupts). Therefore, the `KernelModule` type is
-[`Sync`](https://doc.rust-lang.org/book/ch16-04-extensible-concurrency-sync-and-send.html),
-so all data shared by a kernel module must be safe to access
-concurrently (such as by implementing locking).
+Este proyecto se corre sobre Linux 5.8.0-43-generic (Ubuntu 20.04.2 LTS)
 
-## System requirements
+Necesitamos tener instalado [Rust](https://www.rust-lang.org) - en particular
+Rust nightly, debido a que se emplea [algunos features inestable](https://github.com/fishinabarrel/linux-kernel-module-rust/issues/41) - y [Clang](https://clang.llvm.org) instalado. Vamos a necesitar LLVM/Clang 9 (released September 2019) o superior por múltiples razones, ante todo
+[support for `asm goto`][]. Si está en Debian, Ubuntu o un derivado, https://apt.llvm.org es genial.
 
-We're currently only running CI on Linux 4.15 (Ubuntu Xenial) on amd64,
-although we intend to support kernels from 4.4 through the latest
-release. Please report a bug (or better yet, send in a patch!) if your
-kernel doesn't work.
+Si el binario `clang` es demasiado antiguo, asegúrese de establecer la variable de entorno` CC` o `CLANG` adecuadamente, por ejemplo,` CC = clang-9`.
 
-Other architectures aren't implemented yet, but should work as long as
-there's Rust and LLVM support - see [#112][]
-for expected status. They'll need `src/c_types.rs` ported, too.
-
-You'll need to have [Rust](https://www.rust-lang.org) - in particular
-Rust nightly, as we use [some unstable
-features](https://github.com/fishinabarrel/linux-kernel-module-rust/issues/41) -
-and [Clang](https://clang.llvm.org) installed. You need LLVM/Clang 9
-(released September 2019) or higher for multiple reasons, primarily
-[support for `asm goto`][]. If you're on Debian, Ubuntu, or a derivative,
-https://apt.llvm.org is great.
-
-If the binary named `clang` is too old, make sure to set the `CC` or
-`CLANG` environment variable appropriately, e.g., `CC=clang-9`.
-
-Very recent kernels may require newer versions of Clang - try Clang 11
-if older versions don't work for you.
+Kernles muy recientes pueden requerir versiones más recientes de Clang; pruebe Clang 11 si las versiones anteriores no le funcionan.
 
 [#112]: https://github.com/fishinabarrel/linux-kernel-module-rust/issues/112
 [support for `asm goto`]: https://github.com/fishinabarrel/linux-kernel-module-rust/issues/123
 
-## Building hello-world
+## Construyendo hello-world
 
 1. Install clang, kernel headers, and the `rust-src` and `rustfmt` components
 from `rustup`:
 
 ```
-apt-get install llvm clang linux-headers-"$(uname -r)" # or the equivalent for your OS
-rustup component add --toolchain=nightly rust-src rustfmt
+- sudo apt updata && apt-get install llvm clang clang-11 linux-headers-"$(uname -r)" # o el equivalente para tu SO
+- snap install rustup --classic
+- rustup toolchain install nightly
+- apt install llvm-dev libclang-deb
+- rustup component add --toolchain=nightly rust-src rustfmt
 ```
 
-2. cd to one of the examples
+2. entrar a la carpeta hello-world 
 
 ```
 cd hello-world
 ```
 
-3. Build the kernel module using the Linux kernel build system (kbuild), this
-will invoke `cargo` to build the Rust code
+3. Construir el módulo del kernel usando el sistema de compilación del kernel de Linux (kbuild), esto invocará `cargo` para compilar el código Rust
 
 ```
 make
@@ -92,11 +57,4 @@ sudo insmod helloworld.ko
 sudo rmmod helloworld
 dmesg | tail
 ```
-```
-- sudo apt updata
-- sudo apt install llvm clang clang-11
-- sudo apt install linux-headers-"$(uname -r)"
-- snap install rustup --classic
-- rustup toolchain install nightly
-- apt install llvm-dev libclang-deb
-```
+
