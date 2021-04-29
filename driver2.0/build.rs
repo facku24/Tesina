@@ -130,20 +130,25 @@ fn prepare_cflags(cflags: &str, kernel_dir: &str) -> Vec<String> {
 }
 
 fn main() {
+    // Recompilate if change this environment variables
     println!("cargo:rerun-if-env-changed=CC");
     println!("cargo:rerun-if-env-changed=KDIR");
     println!("cargo:rerun-if-env-changed=c_flags2");
 
+    // In case that we don't invoke build from make
     let kernel_dir = env::var("KDIR").expect("Must be invoked from kernel makefile");
+
     let kernel_cflags = env::var("c_flags").expect("Add 'export c_flags' to Kbuild");
-    let kbuild_cflags_module =
-        env::var("KBUILD_CFLAGS_MODULE").expect("Must be invoked from kernel makefile");
+    
+    // In case that we don't invoke build from make
+    let kbuild_cflags_module = env::var("KBUILD_CFLAGS_MODULE").expect("Must be invoked from kernel makefile");
 
     let cflags = format!("{} {}", kernel_cflags, kbuild_cflags_module);
     let kernel_args = prepare_cflags(&cflags, &kernel_dir);
 
     let target = env::var("TARGET").unwrap();
-
+    println!("target: {}", target);
+    
     let mut builder = bindgen::Builder::default()
         .use_core()
         .ctypes_prefix("c_types")
