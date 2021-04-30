@@ -8,7 +8,7 @@ Ejecutamos [bindgen](https://github.com/rust-lang/rust-bindgen) en los headers d
 
 Cada módulo del kernel en Rust vive en una caja `staticlib`, que genera un archivo `.a`. Pasamos este objeto al sistema de compilación de módulos del propio kernel de Linux para vincularlo a un `.ko`.
 
-El kernel es intrínsecamente multiproceso: se puede acceder a los recursos del kernel desde múltiples procesos del espacio de usuario a la vez, lo que provoca que múltiples subprocesos de ejecución dentro del kernel manejen las llamadas al sistema (o interrupciones). Por lo tanto, el tipo `KernelModule` es [` Sync`](https://doc.rust-lang.org/book/ch16-04-extensible-concurrency-sync-and-send.html), por lo que todos los datos compartidos por un módulo del kernel debe ser seguro para acceder simultáneamente (por ejemplo, mediante la implementación del bloqueo).
+El kernel es intrínsecamente multiproceso: se puede acceder a los recursos del kernel desde múltiples procesos del espacio de usuario a la vez, lo que provoca que múltiples subprocesos de ejecución dentro del kernel manejen las llamadas al sistema (o interrupciones). Por lo tanto, el tipo `KernelModule` es [`Sync`](https://doc.rust-lang.org/book/ch16-04-extensible-concurrency-sync-and-send.html), por lo que todos los datos compartidos por un módulo del kernel debe ser seguro para acceder simultáneamente (por ejemplo, mediante la implementación del bloqueo).
 
 ## Requerimientos de sistema
 
